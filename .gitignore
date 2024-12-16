@@ -1,0 +1,60 @@
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Fichiers générés par Unity
+Library/
+Temp/
+Obj/
+Build/
+Builds/
+Logs/
+UserSettings/
+MemoryCaptures/
+
+# Fichiers utilisateur
+*.csproj
+*.sln
+*.userprefs
+
+# Cache de Unity
+.vscode/
+*.pidb
+*.suo
+*.user
+*.unityproj
+*.swp
+*.bak
+*.ncb
+*.log
+*.pdb
+
+# Fichiers des builds
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Fichiers liés au système de contrôle de version interne de Unity
+UnityPackageManager/
+ProjectSettings/EditorBuildSettings.asset
+
+# Fichiers des plugins ou extensions
+[Ll]ibrary/
+[Mm]emoryCaptures/
+
+# Configuration de la plateforme
+*.gradle
+*.apk
+*.aab
+*.keystore
+
+# Exclusions pour des IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# JetBrains Rider
+.idea/
+*.iml
