@@ -118,6 +118,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a36bec29ae63b4d28859e080484cfae0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clientProbabilitySampleSize: 5
+  clientProbabilitySampleSize: 50
   stationCapacity: 100
   overcowdedThreshold: 50
