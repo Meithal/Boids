@@ -1,0 +1,149 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using Unity.VisualScripting;
+using UnityEngine;
+
+public class TrainStation : MonoBehaviour
+{
+    public int clientProbabilitySampleSize = 500;
+    public int stationCapacity = 100;
+    public int overcowdedThreshold = 50;
+
+
+    private Fitness fitness;
+
+    private class Fitness {
+        public int timeSpentOvercrowded = 0;
+        public int timeSpentFull = 0;
+
+        public int numberOfTrainsPassed = 0;
+
+        public float FinalFitness(ConstantParameters p)
+        {
+            return numberOfTrainsPassed * p.costPerTrain
+            + timeSpentOvercrowded * p.costPerOvercrowded
+            + timeSpentFull * p.costPerFull;
+        }
+    }
+
+    public class MutatingParameters {
+        public int trainCapacity = 50;
+        public int trainFrequency = 100; // one in n change to spawn
+    }
+
+    private class ConstantParameters {
+        public float costPerTrain = 100;
+        public float costPerOvercrowded = 1;
+        public float costPerFull = 10;
+    }
+
+    private int _numberOfPeopleOnStation = 0;
+
+
+    public MutatingParameters mutatingParameters;
+    private ConstantParameters constantParameters;
+
+    // Start is called before the first frame update
+    void Awake()
+    {
+        mutatingParameters = new();
+        constantParameters = new();
+        fitness = new();
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        //showTimeOnUI.numberOfPeopleOnStation = _numberOfPeopleOnStation;
+    }
+
+    void FixedUpdate()
+    {
+        if(UnityEngine.Random.Range(0, clientProbabilitySampleSize) < 1) {
+            _numberOfPeopleOnStation += 1;
+        }
+
+        if(UnityEngine.Random.Range(0, mutatingParameters.trainFrequency) < 1) {
+            _numberOfPeopleOnStation -= Math.Min(
+                mutatingParameters.trainCapacity, 
+                _numberOfPeopleOnStation
+            );
+
+            fitness.numberOfTrainsPassed += 1;
+        }
+
+        _updateFitness();
+    }
+
+    private void _updateFitness()
+    {
+        if(_numberOfPeopleOnStation > overcowdedThreshold) {
+            fitness.timeSpentOvercrowded += 1;
+        }
+
+        if(_numberOfPeopleOnStation >= stationCapacity) {
+            fitness.timeSpentFull += 1;
+        }
+    }
+
+    public float FinalFitness()
+    {
+        return 
+        fitness.FinalFitness(constantParameters);
+    }
+
+    public String DebugFitess()
+    {
+        return "trains " + fitness.numberOfTrainsPassed
+        + "crowded " + fitness.timeSpentOvercrowded
+        + "full " + fitness.timeSpentFull;
+    }
+
+    public void Cross(MutatingParameters p1, MutatingParameters p2) {
+        mutatingParameters.trainCapacity = 
+        (
+            p1.trainCapacity 
+            + p2.trainCapacity
+        ) / 2;
+        mutatingParameters.trainFrequency = (
+            p1.trainFrequency 
+            + p2.trainFrequency
+        ) / 2;
+    }
+
+    public void Mutate()
+    {
+        {
+
+            float nv = mutatingParameters.trainCapacity 
+                * (1f + UnityEngine.Random.Range(-0.5f, 1f));
+            mutatingParameters.trainCapacity = (int)nv;
+        }
+
+        {
+            float nv = mutatingParameters.trainFrequency 
+                * (1 + UnityEngine.Random.Range(-0.5f, 1f));
+            mutatingParameters.trainFrequency = (int)nv;
+        }
+    }
+
+    void OnDrawGizmos()
+    {
+        // Set the gizmo color
+        GUIStyle style = new GUIStyle();
+        //style.normal.textColor = textColor;
+        style.fontSize = 12; // Adjust font size as needed
+        style.alignment = TextAnchor.MiddleCenter;
+
+        // Draw the text at the cube's position plus the offset
+        Vector3 textPosition = transform.position ;//+ textOffset;
+        UnityEditor.Handles.Label(
+            textPosition, 
+            "People waiting " + _numberOfPeopleOnStation + 
+        "\nTrain frequency " + mutatingParameters.trainFrequency
+        + "\nTrain capacity " + mutatingParameters.trainCapacity
+        , style);
+    }
+
+}
