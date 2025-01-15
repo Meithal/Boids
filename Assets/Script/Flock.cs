@@ -37,6 +37,7 @@ public class Flock : MonoBehaviour
                 Random.insideUnitCircle * startingCount * AgentDensity, 
                 Quaternion.Euler(Vector3.forward * Random.Range(0f, 360f)), transform);
             newAgent.name = "Agent" + i;
+            newAgent.Initialize(this);
             agents.Add(newAgent);
         }
     }
