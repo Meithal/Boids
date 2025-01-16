@@ -10,6 +10,7 @@ public class TrainStation : MonoBehaviour
     public int stationCapacity = 100;
     public int overcowdedThreshold = 50;
 
+    public GameObject passantPrefab;
 
     private Fitness fitness;
 
@@ -40,7 +41,6 @@ public class TrainStation : MonoBehaviour
 
     private int _numberOfPeopleOnStation = 0;
 
-
     public MutatingParameters mutatingParameters;
     private ConstantParameters constantParameters;
 
@@ -62,14 +62,36 @@ public class TrainStation : MonoBehaviour
     {
         if(UnityEngine.Random.Range(0, clientProbabilitySampleSize) < 1) {
             _numberOfPeopleOnStation += 1;
+
+            var cube = Instantiate(
+                passantPrefab,
+                this.transform.position + new Vector3(0, _numberOfPeopleOnStation * 1, 0),
+                Quaternion.identity,
+                this.transform
+            );
+            cube.transform.localScale = new Vector3(0.05f, 0.5f, 0.025f);
         }
 
         if(UnityEngine.Random.Range(0, mutatingParameters.trainFrequency) < 1) {
-            _numberOfPeopleOnStation -= Math.Min(
+            int toDelete = Math.Min(
                 mutatingParameters.trainCapacity, 
                 _numberOfPeopleOnStation
             );
+            _numberOfPeopleOnStation -= toDelete;
 
+        int totalChildren = transform.childCount;
+
+        for (int i = totalChildren - 1; i >= totalChildren - toDelete; i--)
+        {
+            Transform child = transform.GetChild(i);
+            Destroy(child.gameObject);
+        }
+/*
+            while(toDelete-->=0) {
+                Transform child = transform.GetChild(transform.childCount - 1);
+                Destroy(child.gameObject);
+            }
+*/
             fitness.numberOfTrainsPassed += 1;
         }
 

@@ -23,6 +23,9 @@ public class GameLogic : MonoBehaviour
     private float thirtyMinutes = 10f * 60f; // 30 minutes in seconds
 
 
+    public float horizontalSpaceBetweenStations = 15;
+    public float verticalSpaceBetweenStations = 25;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -37,7 +40,10 @@ public class GameLogic : MonoBehaviour
             int column = i % columns;
             stations.Add(Instantiate<TrainStation>(
                 trainStationPrefab, 
-                new Vector3(row * 15, 0, column * 25), 
+                new Vector3(
+                    row * horizontalSpaceBetweenStations, 
+                    0, 
+                    column * verticalSpaceBetweenStations), 
                 Quaternion.identity, 
                 this.gameObject.transform));
         }
@@ -57,20 +63,6 @@ public class GameLogic : MonoBehaviour
             elapsedTime = 0f; // Reset timer or handle as needed
             _spawnNewGeneration();
         }
-
-    }
-
-    void FixedUpdate() 
-    {
-        _updateFitness();
-    }
-
-    private void _updateFitness()
-    {
-        foreach (var station in stations)
-        {
-            //if(station.)
-        }
     }
 
     private TrainStation pop(List<TrainStation> s, int w=0)
@@ -80,15 +72,9 @@ public class GameLogic : MonoBehaviour
 
         return ts;
     }
+
     private void _spawnNewGeneration()
     {
-        List<float> finalFitnesses = new();
-        foreach (var station in stations)
-        {
-            finalFitnesses.Add(station.FinalFitness());
-            //Debug.Log("df " + station.DebugFitess());
-        }
-
         stations.Sort(
             (s1, s2) => s1.FinalFitness().CompareTo(s2.FinalFitness())
         );
@@ -107,7 +93,10 @@ public class GameLogic : MonoBehaviour
 
                 TrainStation nw = Instantiate<TrainStation>(
                     trainStationPrefab, 
-                    new Vector3(row * 15, 0, column * 25), 
+                    new Vector3(
+                        row * horizontalSpaceBetweenStations, 
+                        0, 
+                        column * verticalSpaceBetweenStations), 
                     Quaternion.identity, 
                     this.gameObject.transform);
 
@@ -121,7 +110,7 @@ public class GameLogic : MonoBehaviour
         }
         for (int i = 0; i < stations.Count; i++)
         {
-            Destroy(stations[i]);
+            Destroy(stations[i].gameObject);
         }
 
         stations = newStations;

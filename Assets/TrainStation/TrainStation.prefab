@@ -121,3 +121,4 @@ MonoBehaviour:
   clientProbabilitySampleSize: 50
   stationCapacity: 100
   overcowdedThreshold: 50
+  passantPrefab: {fileID: 940234528058996067, guid: 145a3c9a4b6144150b7e535d84ad9f62, type: 3}
