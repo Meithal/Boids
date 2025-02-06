@@ -1,7 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 
@@ -135,12 +132,12 @@ public class TrainStation : IFitStation
         
         mutatingParameters.trainCapacity = 
         (
-            ((MutatingParameters)p1).trainCapacity 
-            + ((MutatingParameters)p2).trainCapacity
+            p1.trainCapacity 
+            + p2.trainCapacity
         ) / 2;
         mutatingParameters.trainFrequency = (
-            ((MutatingParameters)p1).trainFrequency 
-            + ((MutatingParameters)p2).trainFrequency
+            p1.trainFrequency 
+            + p2.trainFrequency
         ) / 2;
     }
 

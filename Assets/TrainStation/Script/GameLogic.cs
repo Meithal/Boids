@@ -11,7 +11,7 @@ public class GameLogic : MonoBehaviour
     public DateTime dateTime;
     public ShowTimeOnUI showTimeOnUI;
 
-    public TrainStation trainStationPrefab;
+    public TrainStationV2 trainStationPrefab;
 
     [Range(0f, 100f)]
     public float speed = 1.0f;
@@ -38,7 +38,7 @@ public class GameLogic : MonoBehaviour
         {
             int row = i / columns;
             int column = i % columns;
-            stations.Add(Instantiate<TrainStation>(
+            stations.Add(Instantiate(
                 trainStationPrefab, 
                 new Vector3(
                     row * horizontalSpaceBetweenStations, 
@@ -113,7 +113,7 @@ public class GameLogic : MonoBehaviour
         }
         for (int i = 0; i < stations.Count; i++)
         {
-            Destroy(stations[i].gameObject);
+            //Destroy(stations[i].gameObject);
         }
 
         stations = newStations;
