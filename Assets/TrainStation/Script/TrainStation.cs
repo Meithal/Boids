@@ -4,7 +4,15 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class TrainStation : MonoBehaviour
+
+
+
+public class MutatingParameters: IMutatingParameters {
+    public int trainCapacity { get; set; } = 50;
+    public int trainFrequency { get; set; } = 100; // one in n chance to spawn
+}
+
+public class TrainStation : IFitStation
 {
     public int clientProbabilitySampleSize = 500;
     public int stationCapacity = 100;
@@ -12,12 +20,17 @@ public class TrainStation : MonoBehaviour
 
     public GameObject passantPrefab;
 
+    private MutatingParameters _mutatingParameters = new();
+    public override IMutatingParameters mutatingParameters {
+        get => _mutatingParameters;
+        set => _mutatingParameters = (MutatingParameters)value;
+    }
+
     private Fitness fitness;
 
     private class Fitness {
         public int timeSpentOvercrowded = 0;
         public int timeSpentFull = 0;
-
         public int numberOfTrainsPassed = 0;
 
         public float FinalFitness(ConstantParameters p)
@@ -28,11 +41,6 @@ public class TrainStation : MonoBehaviour
         }
     }
 
-    public class MutatingParameters {
-        public int trainCapacity = 50;
-        public int trainFrequency = 100; // one in n change to spawn
-    }
-
     private class ConstantParameters {
         public float costPerTrain = 100;
         public float costPerOvercrowded = 1;
@@ -41,13 +49,12 @@ public class TrainStation : MonoBehaviour
 
     private int _numberOfPeopleOnStation = 0;
 
-    public MutatingParameters mutatingParameters;
     private ConstantParameters constantParameters;
 
     // Start is called before the first frame update
     void Awake()
     {
-        mutatingParameters = new();
+        _mutatingParameters = new();
         constantParameters = new();
         fitness = new();
     }
@@ -79,13 +86,13 @@ public class TrainStation : MonoBehaviour
             );
             _numberOfPeopleOnStation -= toDelete;
 
-        int totalChildren = transform.childCount;
+            int totalChildren = transform.childCount;
 
-        for (int i = totalChildren - 1; i >= totalChildren - toDelete; i--)
-        {
-            Transform child = transform.GetChild(i);
-            Destroy(child.gameObject);
-        }
+            for (int i = totalChildren - 1; i >= totalChildren - toDelete; i--)
+            {
+                Transform child = transform.GetChild(i);
+                Destroy(child.gameObject);
+            }
 /*
             while(toDelete-->=0) {
                 Transform child = transform.GetChild(transform.childCount - 1);
@@ -109,35 +116,37 @@ public class TrainStation : MonoBehaviour
         }
     }
 
-    public float FinalFitness()
+    override public float FinalFitness()
     {
         return 
         fitness.FinalFitness(constantParameters);
     }
 
-    public String DebugFitess()
+    override public string DebugFitness()
     {
         return "trains " + fitness.numberOfTrainsPassed
         + "crowded " + fitness.timeSpentOvercrowded
         + "full " + fitness.timeSpentFull;
     }
 
-    public void Cross(MutatingParameters p1, MutatingParameters p2) {
+    override public void Cross(
+        IMutatingParameters p1, IMutatingParameters p2
+    ) {
+        
         mutatingParameters.trainCapacity = 
         (
-            p1.trainCapacity 
-            + p2.trainCapacity
+            ((MutatingParameters)p1).trainCapacity 
+            + ((MutatingParameters)p2).trainCapacity
         ) / 2;
         mutatingParameters.trainFrequency = (
-            p1.trainFrequency 
-            + p2.trainFrequency
+            ((MutatingParameters)p1).trainFrequency 
+            + ((MutatingParameters)p2).trainFrequency
         ) / 2;
     }
 
-    public void Mutate()
+    override public void Mutate()
     {
         {
-
             float nv = mutatingParameters.trainCapacity 
                 * (1f + UnityEngine.Random.Range(-0.5f, 1f));
             mutatingParameters.trainCapacity = (int)nv;
@@ -160,12 +169,14 @@ public class TrainStation : MonoBehaviour
 
         // Draw the text at the cube's position plus the offset
         Vector3 textPosition = transform.position ;//+ textOffset;
+#if UNITY_EDITOR
         UnityEditor.Handles.Label(
             textPosition, 
             "People waiting " + _numberOfPeopleOnStation + 
         "\nTrain frequency " + mutatingParameters.trainFrequency
         + "\nTrain capacity " + mutatingParameters.trainCapacity
         , style);
+#endif
     }
 
 }

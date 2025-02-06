@@ -17,7 +17,7 @@ public class GameLogic : MonoBehaviour
     public float speed = 1.0f;
 
     public int numberOfStations = 40;
-    public List<TrainStation> stations = new();
+    public List<IFitStation> stations = new();
 
     private float elapsedTime = 0f; // Time elapsed in seconds
     private float thirtyMinutes = 10f * 60f; // 30 minutes in seconds
@@ -79,7 +79,7 @@ public class GameLogic : MonoBehaviour
             (s1, s2) => s1.FinalFitness().CompareTo(s2.FinalFitness())
         );
         
-        List<TrainStation> newStations = new();
+        List<IFitStation> newStations = new();
         int j = 0;
         int columns = 10;
 
@@ -91,7 +91,7 @@ public class GameLogic : MonoBehaviour
                 int row = j / columns;
                 int column = j % columns;
 
-                TrainStation nw = Instantiate<TrainStation>(
+                IFitStation nw = Instantiate(
                     trainStationPrefab, 
                     new Vector3(
                         row * horizontalSpaceBetweenStations, 
@@ -103,7 +103,10 @@ public class GameLogic : MonoBehaviour
 
                 newStations.Add(nw);
 
-                nw.Cross(ts1.mutatingParameters, ts2.mutatingParameters);
+                nw.Cross(
+                    ts1.mutatingParameters, 
+                    ts2.mutatingParameters
+                );
                 nw.Mutate();
                 j += 1;
             }
