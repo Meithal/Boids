@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e2843cb90a4360e44891671441c83928, type: 3}
-  m_Name: CenteredFlockBehavior 1
+  m_Name: PinkFlockBehavior
   m_EditorClassIdentifier: 
   behaviors:
   - Behavior: {fileID: 11400000, guid: 783c1c0828aa45146bc0488a7e14de52, type: 2}
@@ -21,3 +21,5 @@ MonoBehaviour:
     Weight: 1.02
   - Behavior: {fileID: 11400000, guid: 798df4a3e1baf4b4a8288779b8cbefa5, type: 2}
     Weight: 0.2
+  - Behavior: {fileID: 11400000, guid: 5e585d0e587f14845b0cddad30d86330, type: 2}
+    Weight: 1
