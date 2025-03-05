@@ -1,5 +1,10 @@
+using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
+using DG.Tweening;
+using Unity.AI.Navigation;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class LsystemScript : MonoBehaviour
 {
@@ -7,14 +12,59 @@ public class LsystemScript : MonoBehaviour
     [SerializeField] private GameObject platformPrefab;
     [SerializeField] private GameObject stairPrefab;
     [SerializeField] private GameObject intersectionPrefab;
+    [SerializeField] private GameObject metroPrefab;
+    [SerializeField] private GameObject pietonPrefab;
     [SerializeField] private float segmentLength = 10f;
     [SerializeField] private float stairHeight = 3f;
     [SerializeField] private float intersectionOffset = 5f;
     [SerializeField] private int maxDepth = 2;
 
+    /// <summary>
+    /// Le nombre de secondes où le train reste dans la station
+    /// Et où aucun autre train ne peut spawn
+    /// </summary>
+    [SerializeField] private float secondsTrainStayinStation = 5;
+
     private const string axiom = "F";
     private Dictionary<char, string> rules;
     private string currentString;
+    public List<StationParams> platforms = new();
+    public GameObject pietonsGroup;
+
+
+    public struct TransformInfo
+    {
+        public Vector3 position;
+        public Quaternion rotation;
+
+        public TransformInfo(Vector3 pos, Quaternion rot)
+        {
+            position = pos;
+            rotation = rot;
+        }
+    }
+
+    public class StationParams {
+        public TransformInfo transformInfo;
+        public int trainSpawnProbability;
+        public float lastTrainEntry;
+        public int pietonSpawnProbability;
+
+        public StationParams(TransformInfo transformInfo, int trainSpawnProbability, int pietonSpawnProbability)
+        {
+            this.transformInfo = transformInfo;
+            this.trainSpawnProbability = trainSpawnProbability;
+            this.pietonSpawnProbability = pietonSpawnProbability;
+            this.lastTrainEntry = 0;
+        }
+    }
+
+    // async await
+    private CancellationTokenSource cancellationTokenSource;
+
+    // navmesh
+    public NavMeshSurface navMeshSurface;
+
 
     void Start()
     {
@@ -22,18 +72,66 @@ public class LsystemScript : MonoBehaviour
         {
             /* 
              'F' = couloirs 
-             'I' = intersections (ou entr�es)
+             'I' = intersections (ou entrées)
              'S' = escaliers
              'P' = platforme
             */
             { 'F', "FIF" },
-            { 'I', "[S]F" }             
+            { 'I', "[S]F" }
         };
 
         currentString = axiom; 
         GenerateLSystem(maxDepth);
         BuildStation();
     }
+
+    void ScheduleAction(System.Action action, float delay)
+    {
+        StartCoroutine(DelayedCallback(action, delay));
+    }
+    
+    IEnumerator DelayedCallback(System.Action action, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        action?.Invoke();
+    }
+
+    void FixedUpdate()
+    {
+        foreach(var station in platforms) {
+
+            // fait spawn un train
+            if(UnityEngine.Random.Range(0, station.trainSpawnProbability) < 1) {
+                
+                /// Si un train est toujours présent sur la station, on continue
+                if(Time.fixedTime < station.lastTrainEntry + secondsTrainStayinStation + 2) {
+                    continue;
+                }
+
+                var goStation = Instantiate(metroPrefab, station.transformInfo.position, station.transformInfo.rotation);
+
+                Vector3 targetPosition = goStation.transform.position + goStation.transform.up * 1.1f;
+
+                goStation.transform.DOMove(targetPosition, 1f).SetEase(Ease.OutBack);
+
+                station.lastTrainEntry = Time.fixedTime;
+
+                ScheduleAction(() => {
+                    Debug.Log("5 seconds passed!"); 
+                    Vector3 targetPosition = goStation.transform.position + goStation.transform.up * 1.1f;
+
+                    goStation.transform.DOMove(targetPosition, 1f).SetEase(Ease.InBack).OnComplete(() => Destroy(goStation));
+
+                }, 5.0f);
+            }
+
+            // fait spawn un pieton
+            if(UnityEngine.Random.Range(0, station.pietonSpawnProbability) < 1) {
+                _spawnPietonAndSendHimToQuai();
+            }
+        }
+    }
+
 
     void GenerateLSystem(int iterations)
     {
@@ -60,7 +158,12 @@ public class LsystemScript : MonoBehaviour
                     CreateSegment(corridorPrefab);
                     break;
                 case 'I':
-                    transformStack.Push(new TransformInfo(transform.position, transform.rotation));
+                    transformStack.Push(
+                        new TransformInfo(
+                            transform.position, 
+                            transform.rotation
+                        )
+                    );
                     CreateIntersection();
                     transformStack.Pop();
                     break;
@@ -71,7 +174,9 @@ public class LsystemScript : MonoBehaviour
                     CreateStair();
                     break;
                 case '[':
-                    transformStack.Push(new TransformInfo(transform.position, transform.rotation));
+                    transformStack.Push(
+                        new TransformInfo(transform.position, transform.rotation)
+                    );
                     transform.Rotate(Vector3.up, -90);
                     break;
                 case ']':
@@ -85,6 +190,17 @@ public class LsystemScript : MonoBehaviour
                     break;
             }
         }
+
+        navMeshSurface = gameObject.AddComponent<NavMeshSurface>();
+
+        for (int i = 0; i < NavMesh.GetSettingsCount(); i++)
+        {
+            NavMeshBuildSettings navMeshSettings = NavMesh.GetSettingsByID(i);
+            Debug.Log($"Agent Type ID: {navMeshSettings.agentTypeID}, Name: {NavMesh.GetSettingsNameFromID(i)}");
+        }
+        
+        //navMeshSurface.agentTypeID = NavMesh.GetSettingsByID(-1).agentTypeID;
+        navMeshSurface.BuildNavMesh();
     }
 
     void CreateSegment(GameObject prefab)
@@ -99,25 +215,40 @@ public class LsystemScript : MonoBehaviour
         Vector3 startPosition = transform.position;
         Instantiate(stairPrefab, startPosition, transform.rotation);
 
+        CreatePlatform(startPosition);
+    }
 
-        // Cr�er la plateforme sous l'escalier
+    // On crée la plateforme
+    void CreatePlatform(Vector3 startPosition)
+    {
+        // Créer la plateforme sous l'escalier
         Vector3 platformPosition = startPosition;
         platformPosition.y -= stairHeight; // Descendre au sol
         platformPosition += transform.forward * (segmentLength / 150); // Centrer sous l'escalier
         platformPosition += transform.right * (segmentLength * 7); // Avancer la plateforme
-        Quaternion platformRotation = Quaternion.Euler(0, transform.rotation.eulerAngles.y + 90, 0); // Rotation de la plateforme 90�
+        Quaternion platformRotation = Quaternion.Euler(
+            0, transform.rotation.eulerAngles.y + 90, 0
+        ); // Rotation de la plateforme 90º
         Instantiate(platformPrefab, platformPosition, platformRotation);
 
         // Monter et avancer
-        transform.Translate(Vector3.up * stairHeight);
-        transform.Translate(Vector3.forward * (segmentLength / 2));
-    }
+        //transform.Translate(Vector3.up * stairHeight);
+        //transform.Translate(Vector3.forward * (segmentLength / 2));
 
+        // ajout une plateforme vers chaque direction
+        Quaternion rotation90X = Quaternion.Euler(90f, 0f, 0f);
+        Quaternion aRotation90X = Quaternion.Euler(-90f, 0f, 0f);
+
+        platforms.Add(new StationParams(new TransformInfo(platformPosition + transform.forward * 3, platformRotation * rotation90X), 500, 10));
+        platforms.Add(new StationParams(new TransformInfo(platformPosition - transform.forward * 3, platformRotation * aRotation90X), 500, 10));
+    }
 
     void CreateIntersection()
     {
-        Vector3 originalPosition = transform.position;
-        Quaternion originalRotation = transform.rotation;
+        transform.GetPositionAndRotation(
+            out Vector3 originalPosition, 
+            out Quaternion originalRotation
+        );
 
         Instantiate(intersectionPrefab, originalPosition, originalRotation);
 
@@ -126,15 +257,51 @@ public class LsystemScript : MonoBehaviour
 
 
 
-    private class TransformInfo
+    private void _spawnPietonAndSendHimToQuai()
     {
-        public Vector3 position;
-        public Quaternion rotation;
+        var pedestrian = Instantiate(
+            pietonPrefab,
+            transform.position,
+            Quaternion.identity,
+            pietonsGroup.transform
+        );
+        //cube.transform.localScale = new Vector3(0.05f, 0.5f, 0.025f);
 
-        public TransformInfo(Vector3 pos, Quaternion rot)
+        // Check if the pedestrian is close enough to the NavMesh
+        if (!IsOnNavMesh(pedestrian.transform.position))
         {
-            position = pos;
-            rotation = rot;
+            // If not, find the closest point on the NavMesh
+            Vector3 closestPoint = FindClosestNavMeshPoint(pedestrian.transform.position, 2);
+
+            pedestrian.transform.position = closestPoint; // Move the pedestrian to the closest point
         }
+        NavMeshAgent navMeshAgent = pedestrian.AddComponent<NavMeshAgent>();
+
+        Vector3 target = platforms[(int)UnityEngine.Random.Range(0, platforms.Count)].transformInfo.position;
+        Vector3 closest = FindClosestNavMeshPoint(
+            target, 10);
+
+        bool found = navMeshAgent.SetDestination(closest);
+
+        if(!found) {
+            Debug.Log("cant find target destination");
+        }
+    }
+
+    bool IsOnNavMesh(Vector3 position)
+    {
+        NavMeshHit hit;
+        return NavMesh.SamplePosition(position, out hit, 1f, NavMesh.AllAreas);
+    }
+
+    Vector3 FindClosestNavMeshPoint(Vector3 position, float jumpDistance)
+    {
+        NavMeshHit hit;
+        // Sample the position on the NavMesh
+        if (NavMesh.SamplePosition(position, out hit, jumpDistance, NavMesh.AllAreas))
+        {
+            return hit.position; // Return the closest NavMesh point
+        }
+        return position; // Return the original position if no point is found
     }
 }

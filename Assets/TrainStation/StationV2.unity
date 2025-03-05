@@ -295,11 +295,11 @@ MonoBehaviour:
   showTimeOnUI: {fileID: 1719472500}
   trainStationPrefab: {fileID: 6420927465671263860, guid: 1bc4f3b8f685949558f895aebd91876b, type: 3}
   speed: 0
-  numberOfStations: 1
+  numberOfStations: 10
   stations:
   - {fileID: 0}
-  horizontalSpaceBetweenStations: 155.8
-  verticalSpaceBetweenStations: 55.3
+  horizontalSpaceBetweenStations: 193.3
+  verticalSpaceBetweenStations: 100.1
 --- !u!4 &1719472499
 Transform:
   m_ObjectHideFlags: 0
