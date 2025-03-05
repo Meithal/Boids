@@ -277,6 +277,11 @@ public class LsystemScript : MonoBehaviour
         }
         NavMeshAgent navMeshAgent = pedestrian.AddComponent<NavMeshAgent>();
 
+        if (!navMeshAgent.isOnNavMesh)
+        {
+            Debug.LogError("NavMeshAgent is not on the NavMesh!");
+        }
+
         Vector3 target = platforms[(int)UnityEngine.Random.Range(0, platforms.Count)].transformInfo.position;
         Vector3 closest = FindClosestNavMeshPoint(
             target, 10);

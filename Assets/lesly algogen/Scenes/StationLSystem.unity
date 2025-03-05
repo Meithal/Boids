@@ -361,6 +361,10 @@ PrefabInstance:
       value: TreeSpawner
       objectReference: {fileID: 0}
     - target: {fileID: 8031648376681868347, guid: 31818f3d896d64a90ba0815c439e5e8c, type: 3}
+      propertyPath: maxDepth
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8031648376681868347, guid: 31818f3d896d64a90ba0815c439e5e8c, type: 3}
       propertyPath: pietonPrefab
       value: 
       objectReference: {fileID: 940234528058996067, guid: ff87a8894fa024be28e60c46543d992a, type: 3}
