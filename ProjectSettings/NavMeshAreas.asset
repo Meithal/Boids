@@ -11,7 +11,7 @@ NavMeshProjectSettings:
     cost: 1
   - name: Jump
     cost: 2
-  - name: 
+  - name: Loiter
     cost: 1
   - name: 
     cost: 1
@@ -25,41 +25,41 @@ NavMeshProjectSettings:
     cost: 1
   - name: 
     cost: 1
-  - name: 
+  - name: Train 1
     cost: 1
-  - name: 
+  - name: Train 2
     cost: 1
-  - name: 
+  - name: Train 3
     cost: 1
-  - name: 
+  - name: Train 4
     cost: 1
-  - name: 
+  - name: Train 5
     cost: 1
-  - name: 
+  - name: Train 6
     cost: 1
-  - name: 
+  - name: Train 7
     cost: 1
-  - name: 
+  - name: Train 8
     cost: 1
-  - name: 
+  - name: Train 9
     cost: 1
-  - name: 
+  - name: Train 10
     cost: 1
-  - name: 
+  - name: Train 11
     cost: 1
-  - name: 
+  - name: Train 12
     cost: 1
-  - name: 
+  - name: Train 13
     cost: 1
-  - name: 
+  - name: Train 14
     cost: 1
-  - name: 
+  - name: Train 15
     cost: 1
-  - name: 
+  - name: Train 16
     cost: 1
-  - name: 
+  - name: Train 17
     cost: 1
-  - name: 
+  - name: Train 18
     cost: 1
   - name: 
     cost: 1
@@ -73,7 +73,7 @@ NavMeshProjectSettings:
   m_Settings:
   - serializedVersion: 3
     agentTypeID: 0
-    agentRadius: 0.5
+    agentRadius: 0.2
     agentHeight: 2.78
     agentSlope: 45
     agentClimb: 1.7

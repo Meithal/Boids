@@ -1,10 +1,14 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using DG.Tweening;
 using Unity.AI.Navigation;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.EventSystems;
 
 public class LsystemScript : MonoBehaviour
 {
@@ -31,6 +35,7 @@ public class LsystemScript : MonoBehaviour
     public List<StationParams> platforms = new();
     public GameObject pietonsGroup;
 
+    private DefaultDictionary<StationParams, HashSet<WeakReference<GameObject>>> pedestrianTargets = new ();
 
     public struct TransformInfo
     {
@@ -49,13 +54,18 @@ public class LsystemScript : MonoBehaviour
         public int trainSpawnProbability;
         public float lastTrainEntry;
         public int pietonSpawnProbability;
+        public string areaName;
 
-        public StationParams(TransformInfo transformInfo, int trainSpawnProbability, int pietonSpawnProbability)
+        public StationParams(TransformInfo transformInfo, int trainSpawnProbability, int pietonSpawnProbability, int areaNumber)
         {
+            if(areaNumber > 18) {
+                throw new Exception("Not enough areas for pahfinding, lower the number of stations");
+            }
             this.transformInfo = transformInfo;
             this.trainSpawnProbability = trainSpawnProbability;
             this.pietonSpawnProbability = pietonSpawnProbability;
             this.lastTrainEntry = 0;
+            this.areaName = "Train " + areaNumber;
         }
     }
 
@@ -104,30 +114,16 @@ public class LsystemScript : MonoBehaviour
             if(UnityEngine.Random.Range(0, station.trainSpawnProbability) < 1) {
                 
                 /// Si un train est toujours présent sur la station, on continue
-                if(Time.fixedTime < station.lastTrainEntry + secondsTrainStayinStation + 2) {
+                if(Time.fixedTime < station.lastTrainEntry + secondsTrainStayinStation + 3) {
                     continue;
                 }
 
-                var goStation = Instantiate(metroPrefab, station.transformInfo.position, station.transformInfo.rotation);
-
-                Vector3 targetPosition = goStation.transform.position + goStation.transform.up * 1.1f;
-
-                goStation.transform.DOMove(targetPosition, 1f).SetEase(Ease.OutBack);
-
-                station.lastTrainEntry = Time.fixedTime;
-
-                ScheduleAction(() => {
-                    Debug.Log("5 seconds passed!"); 
-                    Vector3 targetPosition = goStation.transform.position + goStation.transform.up * 1.1f;
-
-                    goStation.transform.DOMove(targetPosition, 1f).SetEase(Ease.InBack).OnComplete(() => Destroy(goStation));
-
-                }, 5.0f);
+                _spawnTrain(station);
             }
 
             // fait spawn un pieton
             if(UnityEngine.Random.Range(0, station.pietonSpawnProbability) < 1) {
-                _spawnPietonAndSendHimToQuai();
+                _spawnPietonAndSendHimToQuai(station);
             }
         }
     }
@@ -149,6 +145,7 @@ public class LsystemScript : MonoBehaviour
     void BuildStation()
     {
         Stack<TransformInfo> transformStack = new Stack<TransformInfo>();
+        int currentStation = 1;
 
         foreach (char c in currentString)
         {
@@ -171,7 +168,8 @@ public class LsystemScript : MonoBehaviour
                     CreateSegment(platformPrefab);
                     break;
                 case 'S':
-                    CreateStair();
+                    CreateStair(currentStation);
+                    currentStation += 2;
                     break;
                 case '[':
                     transformStack.Push(
@@ -210,16 +208,16 @@ public class LsystemScript : MonoBehaviour
         transform.Translate(Vector3.forward * segmentLength);
     }
 
-    void CreateStair()
+    void CreateStair(int platformNumber)
     {
         Vector3 startPosition = transform.position;
         Instantiate(stairPrefab, startPosition, transform.rotation);
 
-        CreatePlatform(startPosition);
+        CreatePlatform(startPosition, platformNumber);
     }
 
     // On crée la plateforme
-    void CreatePlatform(Vector3 startPosition)
+    void CreatePlatform(Vector3 startPosition, int platformNumber)
     {
         // Créer la plateforme sous l'escalier
         Vector3 platformPosition = startPosition;
@@ -236,11 +234,11 @@ public class LsystemScript : MonoBehaviour
         //transform.Translate(Vector3.forward * (segmentLength / 2));
 
         // ajout une plateforme vers chaque direction
-        Quaternion rotation90X = Quaternion.Euler(90f, 0f, 0f);
-        Quaternion aRotation90X = Quaternion.Euler(-90f, 0f, 0f);
+        Quaternion rotation90X = Quaternion.Euler(0, 180f, 0f);
+        Quaternion aRotation90X = Quaternion.Euler(0, 0f, 0f);
 
-        platforms.Add(new StationParams(new TransformInfo(platformPosition + transform.forward * 3, platformRotation * rotation90X), 500, 10));
-        platforms.Add(new StationParams(new TransformInfo(platformPosition - transform.forward * 3, platformRotation * aRotation90X), 500, 10));
+        platforms.Add(new StationParams(new TransformInfo(platformPosition + transform.forward * 3, platformRotation * rotation90X), 500, 100, platformNumber));
+        platforms.Add(new StationParams(new TransformInfo(platformPosition - transform.forward * 3, platformRotation * aRotation90X), 500, 100, platformNumber + 1));
     }
 
     void CreateIntersection()
@@ -256,8 +254,7 @@ public class LsystemScript : MonoBehaviour
     }
 
 
-
-    private void _spawnPietonAndSendHimToQuai()
+    private void _spawnPietonAndSendHimToQuai(StationParams station)
     {
         var pedestrian = Instantiate(
             pietonPrefab,
@@ -266,7 +263,7 @@ public class LsystemScript : MonoBehaviour
             pietonsGroup.transform
         );
         //cube.transform.localScale = new Vector3(0.05f, 0.5f, 0.025f);
-
+ 
         // Check if the pedestrian is close enough to the NavMesh
         if (!IsOnNavMesh(pedestrian.transform.position))
         {
@@ -275,14 +272,17 @@ public class LsystemScript : MonoBehaviour
 
             pedestrian.transform.position = closestPoint; // Move the pedestrian to the closest point
         }
-        NavMeshAgent navMeshAgent = pedestrian.AddComponent<NavMeshAgent>();
+
+        //NavMeshAgent navMeshAgent = pedestrian.AddComponent<NavMeshAgent>();
+        NavMeshAgent navMeshAgent = pedestrian.GetComponent<NavMeshAgent>();
 
         if (!navMeshAgent.isOnNavMesh)
         {
             Debug.LogError("NavMeshAgent is not on the NavMesh!");
         }
 
-        Vector3 target = platforms[(int)UnityEngine.Random.Range(0, platforms.Count)].transformInfo.position;
+        Vector3 target = station.transformInfo.position;
+
         Vector3 closest = FindClosestNavMeshPoint(
             target, 10);
 
@@ -290,6 +290,8 @@ public class LsystemScript : MonoBehaviour
 
         if(!found) {
             Debug.Log("cant find target destination");
+        } else {
+            pedestrianTargets[station].Add(new WeakReference<GameObject>(pedestrian));
         }
     }
 
@@ -309,4 +311,73 @@ public class LsystemScript : MonoBehaviour
         }
         return position; // Return the original position if no point is found
     }
+
+
+
+    private void _spawnTrain(StationParams station)
+    {
+        var trainEaseInDuration = 1.0f;
+        var trainStayDuration = 5.0f;
+
+        NavMeshSurface trainNavMeshSurface = null;
+
+        var goTrain = Instantiate(metroPrefab, station.transformInfo.position, station.transformInfo.rotation);
+
+        Vector3 targetPosition = goTrain.transform.position + goTrain.transform.forward * 1.1f;
+
+        goTrain.transform.DOMove(targetPosition, trainEaseInDuration).SetEase(Ease.OutBack);
+
+        station.lastTrainEntry = Time.fixedTime;
+
+        ScheduleAction(() => {
+
+            Vector3 targetPosition = goTrain.transform.position + goTrain.transform.forward * 1.1f;
+
+
+            goTrain.transform.DOMove(targetPosition, 1f).SetEase(Ease.InBack).OnComplete(() => {
+                Destroy(goTrain);
+                /*if(trainNavMeshSurface != null) {
+                    trainNavMeshSurface.RemoveData(); // Remove the old NavMesh data safely
+                    Destroy(trainNavMeshSurface.gameObject);
+                    trainNavMeshSurface = null;
+                }*/
+                
+                //navMeshSurface.BuildNavMesh();
+                //navMeshSurface.UpdateNavMesh(navMeshSurface.navMeshData);
+                    //NavMesh.RemoveAllNavMeshData(); // Clear all NavMesh data
+                    //navMeshSurface.BuildNavMesh(); // Rebuild the NavMesh
+
+                }
+            );
+
+        }, trainStayDuration);
+
+        ScheduleAction(() => {
+            var trainNavMeshSurface = goTrain.GetComponent<NavMeshSurface>();
+            var modifier = goTrain.AddComponent<NavMeshModifier>();
+            modifier.overrideArea = true;
+            modifier.area = NavMesh.GetAreaFromName(station.areaName);
+
+            trainNavMeshSurface.BuildNavMesh();
+
+            foreach(var weakpeople in pedestrianTargets[station]) {
+                if(weakpeople.TryGetTarget(out GameObject pedestrian)) {
+                    AgentAreaScatter agent = pedestrian.GetComponent<AgentAreaScatter>();
+                    if(!agent.onPlatform) {
+                        continue;
+                    }
+                    ExecuteEvents.Execute<ITrainMessageTarget>(pedestrian, null, (x,y)=>x.TrainArrive(goTrain, station));
+                }
+            }
+
+        }, trainEaseInDuration);
+    }
+}
+
+
+public interface ITrainMessageTarget : IEventSystemHandler
+{
+    // functions that can be called via the messaging system
+    void TrainArrive(GameObject train, LsystemScript.StationParams station);
+    void ArriveSurPlateforme();
 }
