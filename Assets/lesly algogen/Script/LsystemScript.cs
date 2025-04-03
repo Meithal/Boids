@@ -317,7 +317,7 @@ public class LsystemScript : MonoBehaviour
     private void _spawnTrain(StationParams station)
     {
         var trainEaseInDuration = 1.0f;
-        var trainStayDuration = 5.0f;
+        var trainStayDuration = 15.0f;
 
         NavMeshSurface trainNavMeshSurface = null;
 
@@ -356,6 +356,7 @@ public class LsystemScript : MonoBehaviour
             var trainNavMeshSurface = goTrain.GetComponent<NavMeshSurface>();
             var modifier = goTrain.AddComponent<NavMeshModifier>();
             modifier.overrideArea = true;
+            modifier.generateLinks = true;
             modifier.area = NavMesh.GetAreaFromName(station.areaName);
 
             trainNavMeshSurface.BuildNavMesh();
@@ -367,6 +368,7 @@ public class LsystemScript : MonoBehaviour
                         continue;
                     }
                     ExecuteEvents.Execute<ITrainMessageTarget>(pedestrian, null, (x,y)=>x.TrainArrive(goTrain, station));
+                    pedestrian.transform.parent = goTrain.transform;
                 }
             }
 

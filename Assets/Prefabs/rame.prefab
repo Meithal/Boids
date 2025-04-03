@@ -59,6 +59,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b179097a79b054fe3973b0f10e497514, type: 3}
       insertIndex: -1
       addedObject: {fileID: -8858347049366509236}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b179097a79b054fe3973b0f10e497514, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3123303543540370137}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b179097a79b054fe3973b0f10e497514, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3861719437675711926}
   m_SourcePrefab: {fileID: 100100000, guid: b179097a79b054fe3973b0f10e497514, type: 3}
 --- !u!1 &2528362521751758095 stripped
 GameObject:
@@ -96,3 +102,43 @@ MonoBehaviour:
   m_MinRegionArea: 0.28
   m_NavMeshData: {fileID: 23800000, guid: d26d836bf48694e5b88fd62807b453b9, type: 2}
   m_BuildHeightMesh: 0
+--- !u!114 &3123303543540370137
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2528362521751758095}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6eeb5dc026fdf4b488bc7ae0138ab719, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_AgentTypeID: 0
+  m_StartPoint: {x: 1.17, y: 0.2, z: 12.71}
+  m_EndPoint: {x: 2.4, y: 0.32, z: 12.7}
+  m_Width: 1.77
+  m_CostModifier: -1
+  m_Bidirectional: 1
+  m_AutoUpdatePosition: 0
+  m_Area: 0
+--- !u!114 &3861719437675711926
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2528362521751758095}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6eeb5dc026fdf4b488bc7ae0138ab719, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_AgentTypeID: 0
+  m_StartPoint: {x: -2.26, y: 0.2, z: 12.71}
+  m_EndPoint: {x: -1.17, y: 0.32, z: 12.7}
+  m_Width: 1.77
+  m_CostModifier: -1
+  m_Bidirectional: 1
+  m_AutoUpdatePosition: 0
+  m_Area: 0

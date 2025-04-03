@@ -19,8 +19,12 @@ public class VoyageurLogic : MonoBehaviour, ITrainMessageTarget
 
 
         Vector3 randomPointInTrain;
-        if(RandomPointOnNavMesh(transform.localPosition, 10, out randomPointInTrain, station.areaName)) {
-            agent.SetDestination(randomPointInTrain);
+        if(RandomPointOnNavMesh(train.transform.position, 10, out randomPointInTrain, station.areaName)) {
+            if(!agent.SetDestination(randomPointInTrain)) {
+                Debug.LogError("can't find way on the train");
+            }
+        } else {
+            Debug.LogError("can't find random point on " + station.areaName);
         }
     }
 
@@ -43,7 +47,7 @@ public class VoyageurLogic : MonoBehaviour, ITrainMessageTarget
         {
             Vector3 randomPoint = center + UnityEngine.Random.insideUnitSphere * range;
             NavMeshHit hit;
-            if (NavMesh.SamplePosition(randomPoint, out hit, 1.0f, NavMesh.GetAreaFromName(navmeshAreaName)))
+            if (NavMesh.SamplePosition(randomPoint, out hit, 1.0f, NavMesh.AllAreas))
             {
                 result = hit.position;
                 return true;
