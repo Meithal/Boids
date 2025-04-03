@@ -27,7 +27,7 @@ public class LsystemScript : MonoBehaviour
     /// Le nombre de secondes où le train reste dans la station
     /// Et où aucun autre train ne peut spawn
     /// </summary>
-    [SerializeField] private float secondsTrainStayinStation = 5;
+    [SerializeField] private float secondsTrainStayinStation = 15;
 
     private const string axiom = "F";
     private Dictionary<char, string> rules;
@@ -317,9 +317,6 @@ public class LsystemScript : MonoBehaviour
     private void _spawnTrain(StationParams station)
     {
         var trainEaseInDuration = 1.0f;
-        var trainStayDuration = 15.0f;
-
-        NavMeshSurface trainNavMeshSurface = null;
 
         var goTrain = Instantiate(metroPrefab, station.transformInfo.position, station.transformInfo.rotation);
 
@@ -350,7 +347,7 @@ public class LsystemScript : MonoBehaviour
                 }
             );
 
-        }, trainStayDuration);
+        }, secondsTrainStayinStation);
 
         ScheduleAction(() => {
             var trainNavMeshSurface = goTrain.GetComponent<NavMeshSurface>();
